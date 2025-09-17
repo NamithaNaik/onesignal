@@ -65,35 +65,29 @@ class OneSignalService {
     required String appId,
     required String restApiKey,
     required String message,
-    String? heading,
-    List<String>? playerIds,
-    List<String>?
-        subscriptionIds, // Added this to support include_subscription_ids
+    List<String>? subscriptionIds,
   }) async {
     final url = Uri.parse("https://api.onesignal.com/notifications?c=push");
+
     final headers = {
-      "Content-Type": "application/json; charset=utf-8",
-      "Authorization": "Key $restApiKey",
+      "Content-Type": "application/json",
+      "Authorization": "Key Basic $restApiKey",
     };
 
     final body = {
       "app_id": appId,
       "contents": {"en": message},
+      "target_channel": "push",
+      "huawei_category": "MARKETING",
+      "huawei_msg_type": "message",
+      "priority": 10,
+      "ios_interruption_level": "active",
+      "ios_badgeType": "None",
+      "ttl": 259200,
+      "included_segments": [],
+      "excluded_segments": [null],
+      "include_subscription_ids": subscriptionIds ?? []
     };
-
-    if (heading != null) {
-      body["headings"] = {"en": heading};
-    }
-
-    if (playerIds != null && playerIds.isNotEmpty) {
-      body["include_player_ids"] = playerIds;
-    } else if (subscriptionIds != null && subscriptionIds.isNotEmpty) {
-      body["include_subscription_ids"] = subscriptionIds;
-    } else {
-      debugPrint(
-          "Error: Either playerIds or subscriptionIds must be provided.");
-      return;
-    }
 
     try {
       final response = await http.post(
@@ -107,8 +101,7 @@ class OneSignalService {
         debugPrint("OneSignal Response: ${response.body}");
       } else {
         debugPrint(
-          "Failed to send notification. Status: ${response.statusCode}",
-        );
+            "Failed to send notification. Status: ${response.statusCode}");
         debugPrint("Response: ${response.body}");
       }
     } catch (e) {
