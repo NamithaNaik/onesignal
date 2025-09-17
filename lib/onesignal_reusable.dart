@@ -61,33 +61,94 @@ class OneSignalService {
   }
 
   /// Send push notification via OneSignal REST API
+  // static Future<void> sendNotification({
+  //   required String appId,
+  //   required String restApiKey,
+  //   required String message,
+  //   List<String>? subscriptionIds,
+  // }) async {
+  //   final url = Uri.parse("https://api.onesignal.com/notifications?c=push");
+
+  //   final headers = {
+  //     "Content-Type": "application/json",
+  //     "Authorization": "Key Basic $restApiKey",
+  //   };
+
+  //   final body = {
+  //     "app_id": appId,
+  //     "contents": {"en": message},
+  //     "target_channel": "push",
+  //     "huawei_category": "MARKETING",
+  //     "huawei_msg_type": "message",
+  //     "priority": 10,
+  //     "ios_interruption_level": "active",
+  //     "ios_badgeType": "None",
+  //     "ttl": 259200,
+  //     "included_segments": [],
+  //     "excluded_segments": [null],
+  //     "include_subscription_ids": subscriptionIds ?? []
+  //   };
+
+  //   try {
+  //     final response = await http.post(
+  //       url,
+  //       headers: headers,
+  //       body: jsonEncode(body),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       debugPrint("Notification sent successfully.");
+  //       debugPrint("OneSignal Response: ${response.body}");
+  //     } else {
+  //       debugPrint("Failed to send notification. Status: ${response.statusCode}");
+  //       debugPrint("Response: ${response.body}");
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Error sending notification: $e");
+  //   }
+  // }
   static Future<void> sendNotification({
     required String appId,
     required String restApiKey,
     required String message,
     List<String>? subscriptionIds,
+    String? segment, // Add a new parameter for the segment name
   }) async {
-    final url = Uri.parse("https://api.onesignal.com/notifications?c=push");
+    final url = Uri.parse("https://api.onesignal.com/notifications");
 
     final headers = {
       "Content-Type": "application/json",
-      "Authorization": "Key Basic $restApiKey",
+      "Authorization": "Basic $restApiKey",
     };
 
     final body = {
       "app_id": appId,
       "contents": {"en": message},
-      "target_channel": "push",
+      "channel_for_external_user_ids": "push",
+    };
+
+    if (subscriptionIds != null && subscriptionIds.isNotEmpty) {
+      // Target specific users by their subscription IDs
+      body["include_subscription_ids"] = subscriptionIds;
+    } else if (segment != null && segment.isNotEmpty) {
+      // Target a user segment
+      body["included_segments"] = [segment];
+    } else {
+      // Handle the case where neither IDs nor a segment is provided
+      debugPrint(
+          "Error: Either subscriptionIds or a segment must be provided.");
+      return;
+    }
+
+    // Common notification options
+    body.addAll({
       "huawei_category": "MARKETING",
       "huawei_msg_type": "message",
       "priority": 10,
       "ios_interruption_level": "active",
       "ios_badgeType": "None",
       "ttl": 259200,
-      "included_segments": [],
-      "excluded_segments": [null],
-      "include_subscription_ids": subscriptionIds ?? []
-    };
+    });
 
     try {
       final response = await http.post(
