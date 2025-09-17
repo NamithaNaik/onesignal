@@ -61,17 +61,18 @@ class OneSignalService {
   }
 
   /// Send push notification via OneSignal REST API
-  static Future<void> sendNotification({
+   static Future<void> sendNotification({
     required String appId,
     required String restApiKey,
     required String message,
     String? heading,
     List<String>? playerIds,
+    List<String>? subscriptionIds, // Added this to support include_subscription_ids
   }) async {
-    final url = Uri.parse("https://onesignal.com/api/v1/notifications");
+    final url = Uri.parse("https://api.onesignal.com/notifications?c=push");
     final headers = {
       "Content-Type": "application/json; charset=utf-8",
-      "Authorization": "Basic $restApiKey",
+      "Authorization": "Key $restApiKey",
     };
 
     final body = {
@@ -87,6 +88,10 @@ class OneSignalService {
       body["include_player_ids"] = playerIds;
     }
 
+    if (subscriptionIds != null && subscriptionIds.isNotEmpty) {
+      body["include_subscription_ids"] = subscriptionIds;
+    }
+
     try {
       final response = await http.post(
         url,
@@ -96,6 +101,7 @@ class OneSignalService {
 
       if (response.statusCode == 200) {
         debugPrint("Notification sent successfully.");
+        debugPrint("OneSignal Response: ${response.body}");
       } else {
         debugPrint(
           "Failed to send notification. Status: ${response.statusCode}",
