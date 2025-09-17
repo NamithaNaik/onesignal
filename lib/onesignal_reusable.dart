@@ -61,13 +61,14 @@ class OneSignalService {
   }
 
   /// Send push notification via OneSignal REST API
-   static Future<void> sendNotification({
+  static Future<void> sendNotification({
     required String appId,
     required String restApiKey,
     required String message,
     String? heading,
     List<String>? playerIds,
-    List<String>? subscriptionIds, // Added this to support include_subscription_ids
+    List<String>?
+        subscriptionIds, // Added this to support include_subscription_ids
   }) async {
     final url = Uri.parse("https://api.onesignal.com/notifications?c=push");
     final headers = {
@@ -86,10 +87,12 @@ class OneSignalService {
 
     if (playerIds != null && playerIds.isNotEmpty) {
       body["include_player_ids"] = playerIds;
-    }
-
-    if (subscriptionIds != null && subscriptionIds.isNotEmpty) {
+    } else if (subscriptionIds != null && subscriptionIds.isNotEmpty) {
       body["include_subscription_ids"] = subscriptionIds;
+    } else {
+      debugPrint(
+          "Error: Either playerIds or subscriptionIds must be provided.");
+      return;
     }
 
     try {
